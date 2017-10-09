@@ -24,7 +24,7 @@ const (
 
 // Split in words
 func MapFunc(file string, value string) (res []KeyValue) {
-	debug("Map %v\n", value)
+	//debug("Map %v\n", value)
 	words := strings.Fields(value)
 	for _, w := range words {
 		kv := KeyValue{w, ""}
@@ -131,7 +131,8 @@ func port(suffix string) string {
 
 func setup() *Master {
 	files := makeInputs(nMap)
-	master := port("master")
+	//master := port("master")
+	master := "127.0.0.1:9090"
 	mr := Distributed("test", files, nReduce, master)
 	return mr
 }
@@ -162,7 +163,7 @@ func TestSequentialMany(t *testing.T) {
 func TestBasic(t *testing.T) {
 	mr := setup()
 	for i := 0; i < 2; i++ {
-		go RunWorker(mr.address, port("worker"+strconv.Itoa(i)),
+		go RunWorker(mr.address, "127.0.0.1:"+strconv.Itoa(9070+i),
 			MapFunc, ReduceFunc, -1)
 	}
 	mr.Wait()
@@ -174,9 +175,9 @@ func TestBasic(t *testing.T) {
 func TestOneFailure(t *testing.T) {
 	mr := setup()
 	// Start 2 workers that fail after 10 tasks
-	go RunWorker(mr.address, port("worker"+strconv.Itoa(0)),
+	go RunWorker(mr.address, "127.0.0.1:"+strconv.Itoa(9070),
 		MapFunc, ReduceFunc, 10)
-	go RunWorker(mr.address, port("worker"+strconv.Itoa(1)),
+	go RunWorker(mr.address, "127.0.0.1:"+strconv.Itoa(9071),
 		MapFunc, ReduceFunc, -1)
 	mr.Wait()
 	check(t, mr.files)
@@ -196,10 +197,10 @@ func TestManyFailures(t *testing.T) {
 			break
 		default:
 			// Start 2 workers each sec. The workers fail after 10 tasks
-			w := port("worker" + strconv.Itoa(i))
+			w := "127.0.0.1:"+strconv.Itoa(9070)
 			go RunWorker(mr.address, w, MapFunc, ReduceFunc, 10)
 			i++
-			w = port("worker" + strconv.Itoa(i))
+			w = "127.0.0.1:"+strconv.Itoa(9070)
 			go RunWorker(mr.address, w, MapFunc, ReduceFunc, 10)
 			i++
 			time.Sleep(1 * time.Second)

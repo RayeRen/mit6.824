@@ -9,7 +9,7 @@ import (
 	"log"
 	"net"
 	"net/rpc"
-	"os"
+	//"os"
 	"sync"
 )
 
@@ -38,6 +38,7 @@ func (wk *Worker) DoTask(arg *DoTaskArgs, _ *struct{}) error {
 	nc := wk.concurrent
 	wk.Unlock()
 
+	log.Printf("Worker.DoTask:%s number of concurrent %d\n", wk.name, wk.concurrent)
 	if nc > 1 {
 		// schedule() should never issue more than one RPC at a
 		// time to a given worker.
@@ -55,7 +56,7 @@ func (wk *Worker) DoTask(arg *DoTaskArgs, _ *struct{}) error {
 	wk.concurrent -= 1
 	wk.Unlock()
 
-	fmt.Printf("%s: %v task #%d done\n", wk.name, arg.Phase, arg.TaskNumber)
+	fmt.Printf("%s: %v task #%d done, concurrent: %d\n", wk.name, arg.Phase, arg.TaskNumber, wk.concurrent)
 	return nil
 }
 
@@ -95,8 +96,8 @@ func RunWorker(MasterAddress string, me string,
 	wk.nRPC = nRPC
 	rpcs := rpc.NewServer()
 	rpcs.Register(wk)
-	os.Remove(me) // only needed for "unix"
-	l, e := net.Listen("unix", me)
+	//os.Remove(me) // only needed for "unix"
+	l, e := net.Listen("tcp4", me)
 	if e != nil {
 		log.Fatal("RunWorker: worker ", me, " error: ", e)
 	}
