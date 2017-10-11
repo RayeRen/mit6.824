@@ -37,7 +37,7 @@ type config struct {
 	connected []bool   // whether each server is on the net
 	saved     []*Persister
 	endnames  [][]string    // the port file names each sends to
-	logs      []map[int]int // copy of each server's committed entries
+	logs      []map[int]int // copy of each server's committed Entries
 }
 
 var ncpu_once sync.Once
@@ -159,7 +159,7 @@ func (cfg *config) start1(i int) {
 				for j := 0; j < len(cfg.logs); j++ {
 					if old, oldok := cfg.logs[j][m.Index]; oldok && old != v {
 						// some server has already committed a different value for this entry!
-						err_msg = fmt.Sprintf("commit index=%v server=%v %v != server=%v %v",
+						err_msg = fmt.Sprintf("commit LogIndex=%v server=%v %v != server=%v %v",
 							m.Index, i, m.Command, j, old)
 					}
 				}
@@ -279,7 +279,7 @@ func (cfg *config) checkOneLeader() int {
 		lastTermWithLeader := -1
 		for t, leaders := range leaders {
 			if len(leaders) > 1 {
-				cfg.t.Fatalf("term %d has %d (>1) leaders", t, len(leaders))
+				cfg.t.Fatalf("Term %d has %d (>1) leaders", t, len(leaders))
 			}
 			if t > lastTermWithLeader {
 				lastTermWithLeader = t
@@ -294,7 +294,7 @@ func (cfg *config) checkOneLeader() int {
 	return -1
 }
 
-// check that everyone agrees on the term.
+// check that everyone agrees on the Term.
 func (cfg *config) checkTerms() int {
 	term := -1
 	for i := 0; i < cfg.n; i++ {
@@ -303,7 +303,7 @@ func (cfg *config) checkTerms() int {
 			if term == -1 {
 				term = xterm
 			} else if term != xterm {
-				cfg.t.Fatalf("servers disagree on term")
+				cfg.t.Fatalf("servers disagree on Term")
 			}
 		}
 	}
@@ -337,7 +337,7 @@ func (cfg *config) nCommitted(index int) (int, interface{}) {
 
 		if ok {
 			if count > 0 && cmd != cmd1 {
-				cfg.t.Fatalf("committed values do not match: index %v, %v, %v\n",
+				cfg.t.Fatalf("committed values do not match: LogIndex %v, %v, %v\n",
 					index, cmd, cmd1)
 			}
 			count += 1
@@ -372,7 +372,7 @@ func (cfg *config) wait(index int, n int, startTerm int) interface{} {
 	}
 	nd, cmd := cfg.nCommitted(index)
 	if nd < n {
-		cfg.t.Fatalf("only %d decided for index %d; wanted %d\n",
+		cfg.t.Fatalf("only %d decided for LogIndex %d; wanted %d\n",
 			nd, index, n)
 	}
 	return cmd
@@ -385,10 +385,11 @@ func (cfg *config) wait(index int, n int, startTerm int) interface{} {
 // indirectly checks that the servers agree on the
 // same value, since nCommitted() checks this,
 // as do the threads that read from applyCh.
-// returns index.
+// returns LogIndex.
 func (cfg *config) one(cmd int, expectedServers int) int {
 	t0 := time.Now()
 	starts := 0
+
 	for time.Since(t0).Seconds() < 10 {
 		// try all the servers, maybe one is the leader.
 		index := -1
